@@ -80,11 +80,8 @@ public class ShardingJdbcDataSourceConfig {
         Map<String, DataSource> dataSourceMap = new HashMap<>();
 
         // 配置第一个数据源
-        HikariDataSource dataSource1 = new HikariDataSource();
-        dataSource1.setDriverClassName("com.mysql.jdbc.Driver");
-        dataSource1.setJdbcUrl("jdbc:mysql://localhost:3306/test_schema_1");
-        dataSource1.setUsername("root");
-        dataSource1.setPassword("root");
+//        HikariDataSource dataSource1 = getMysqlDataSource();
+        HikariDataSource dataSource1 = getH2DataSource();
         dataSourceMap.put("test_schema_1", dataSource1);
 
         // 配置 test_snow_flake 表规则
@@ -120,6 +117,23 @@ public class ShardingJdbcDataSourceConfig {
         properties.setProperty("sql.show", "true");
         DataSource dataSource = ShardingDataSourceFactory.createDataSource(dataSourceMap, shardingRuleConfig, properties);
         return dataSource;
+    }
+
+    private HikariDataSource getMysqlDataSource() {
+        HikariDataSource dataSource1 = new HikariDataSource();
+        dataSource1.setDriverClassName("com.mysql.jdbc.Driver");
+        dataSource1.setJdbcUrl("jdbc:mysql://localhost:3306/test_schema_1");
+        dataSource1.setUsername("root");
+        dataSource1.setPassword("root");
+        return dataSource1;
+    }
+
+    private HikariDataSource getH2DataSource() {
+        HikariDataSource dataSource1 = new HikariDataSource();
+        dataSource1.setDriverClassName("org.h2.Driver");
+        dataSource1.setJdbcUrl("jdbc:h2:mem:test_schema_1");
+        dataSource1.setUsername("sa");
+        return dataSource1;
     }
 
 }

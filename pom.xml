@@ -42,6 +42,13 @@
             <artifactId>mysql-connector-java</artifactId>
         </dependency>
 
+        <!-- h2 -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
         <!-- sharding jdbc -->
         <dependency>
             <groupId>org.apache.shardingsphere</groupId>
