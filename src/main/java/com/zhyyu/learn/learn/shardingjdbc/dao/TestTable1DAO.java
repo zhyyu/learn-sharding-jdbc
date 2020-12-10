@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 /**
+ * 需开启 com.zhyyu.learn.learn.shardingjdbc.config.ShardingJdbcDataSourceConfig#shardingJdbcDataSource() @Bean
  * @author zhongyu.yzy
  * @date 2020/12/8
  */

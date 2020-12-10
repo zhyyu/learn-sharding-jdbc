@@ -2,20 +2,22 @@ package com.zhyyu.learn.learn.shardingjdbc.config;
 
 import com.zaxxer.hikari.HikariDataSource;
 import org.apache.shardingsphere.api.config.masterslave.MasterSlaveRuleConfiguration;
+import org.apache.shardingsphere.api.config.sharding.KeyGeneratorConfiguration;
 import org.apache.shardingsphere.api.config.sharding.ShardingRuleConfiguration;
 import org.apache.shardingsphere.api.config.sharding.TableRuleConfiguration;
 import org.apache.shardingsphere.api.config.sharding.strategy.InlineShardingStrategyConfiguration;
 import org.apache.shardingsphere.api.config.sharding.strategy.NoneShardingStrategyConfiguration;
+import org.apache.shardingsphere.api.config.sharding.strategy.StandardShardingStrategyConfiguration;
+import org.apache.shardingsphere.api.sharding.standard.PreciseShardingAlgorithm;
+import org.apache.shardingsphere.api.sharding.standard.PreciseShardingValue;
 import org.apache.shardingsphere.shardingjdbc.api.ShardingDataSourceFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.util.StringUtils;
 
 import javax.sql.DataSource;
 import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 
 /**
  * 数据分片
@@ -28,7 +30,7 @@ import java.util.Properties;
 @Configuration
 public class ShardingJdbcDataSourceConfig {
 
-    @Bean
+//    @Bean
     public DataSource shardingJdbcDataSource() throws SQLException {
         // 配置真实数据源
         Map<String, DataSource> dataSourceMap = new HashMap<>();
@@ -64,6 +66,54 @@ public class ShardingJdbcDataSourceConfig {
         MasterSlaveRuleConfiguration masterSlaveRuleConfiguration = new MasterSlaveRuleConfiguration("test_schema_1", "test_schema_1",
                 Arrays.asList("test_schema_1_slave"));
         shardingRuleConfig.getMasterSlaveRuleConfigs().add(masterSlaveRuleConfiguration);
+
+        // 获取数据源对象
+        Properties properties = new Properties();
+        properties.setProperty("sql.show", "true");
+        DataSource dataSource = ShardingDataSourceFactory.createDataSource(dataSourceMap, shardingRuleConfig, properties);
+        return dataSource;
+    }
+
+    @Bean
+    public DataSource shardingJdbcSnowFlakeDataSource() throws SQLException {
+        // 配置真实数据源
+        Map<String, DataSource> dataSourceMap = new HashMap<>();
+
+        // 配置第一个数据源
+        HikariDataSource dataSource1 = new HikariDataSource();
+        dataSource1.setDriverClassName("com.mysql.jdbc.Driver");
+        dataSource1.setJdbcUrl("jdbc:mysql://localhost:3306/test_schema_1");
+        dataSource1.setUsername("root");
+        dataSource1.setPassword("root");
+        dataSourceMap.put("test_schema_1", dataSource1);
+
+        // 配置 test_snow_flake 表规则
+        TableRuleConfiguration testTableTableRuleConfig = new TableRuleConfiguration("test_snow_flake","test_schema_1.test_snow_flake${0..1}");
+
+        // 自定义分片规则
+        StandardShardingStrategyConfiguration standardShardingStrategyConfiguration = new StandardShardingStrategyConfiguration("name", new PreciseShardingAlgorithm() {
+            @Override
+            public String doSharding(Collection availableTargetNames, PreciseShardingValue shardingValue) {
+                String name = (String) shardingValue.getValue();
+                if (StringUtils.isEmpty(name)) {
+                    return (String) availableTargetNames.stream().findFirst().get();
+                }
+
+                if (name.startsWith("a")) {
+                    return "test_snow_flake0";
+                }
+
+                return "test_snow_flake1";
+            }
+        });
+        testTableTableRuleConfig.setTableShardingStrategyConfig(standardShardingStrategyConfiguration);
+
+        // 自定义分布式主键
+        testTableTableRuleConfig.setKeyGeneratorConfig(new KeyGeneratorConfiguration("SNOWFLAKE", "id"));
+
+        // 配置分片规则
+        ShardingRuleConfiguration shardingRuleConfig = new ShardingRuleConfiguration();
+        shardingRuleConfig.getTableRuleConfigs().add(testTableTableRuleConfig);
 
         // 获取数据源对象
         Properties properties = new Properties();

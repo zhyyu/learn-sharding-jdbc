@@ -14,6 +14,9 @@ public class SnowflakeShardingKeyGeneratorTest {
             Comparable<?> key = snowflakeShardingKeyGenerator.generateKey();
             System.out.println(key);
         }
+
+        System.out.println(Integer.MAX_VALUE);
+        System.out.println(Long.MAX_VALUE);
     }
 
 }
